@@ -1,5 +1,11 @@
-// Coordinate System Projection Transformer: EPSG:6677 (Japan Plane Rectangular IX) <-> Web Mercator / WGS84 Tile Coordinates
-// Calibrated for 国土交通省 MLIT Project PLATEAU 3D City Models & GSI Maps
+// Coordinate System Projection Transformer (APPROXIMATION)
+// ---------------------------------------------------------------------------
+// IMPORTANT: This is NOT a true EPSG:6677 (Japan Plane Rectangular Zone IX)
+// transform. It approximates local meters via Web Mercator (EPSG:3857) pixel
+// deltas around a fixed origin. Map tiles and PLATEAU footprints can diverge
+// by several meters. See GitHub Issue #1 for the proper EPSG:6677 / MapLibre plan.
+// ---------------------------------------------------------------------------
+// Calibrated for 国土交通省 MLIT Project PLATEAU 3D City Models & GSI Maps (demo)
 
 export const ORIGIN_LON = 139.7450; // Reference origin West (Toranomon Nishi)
 export const ORIGIN_LAT = 35.6685;  // Reference origin North (Toranomon Kita)
@@ -108,4 +114,3 @@ export function getOptimalMapCalibration() {
     mapTileScale: 1.0,
   };
 }
-
