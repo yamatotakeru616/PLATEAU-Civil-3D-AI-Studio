@@ -157,10 +157,10 @@ export const INITIAL_AGENTS: AgentInfo[] = [
 ];
 
 export const INITIAL_IP_POINTS: IPPoint[] = [
-  { id: 'ip-1', name: 'BP (起点 虎ノ門西)', x: 100, y: 150, elevation: 12.5, R: 0, A1: 0, A2: 0, kp: 0 },
-  { id: 'ip-2', name: 'IP-1 (虎ノ門ヒルズ交差点)', x: 434, y: 145, elevation: 14.8, R: 180, A1: 75, A2: 75, kp: 250 },
-  { id: 'ip-3', name: 'IP-2 (新橋合同庁舎西)', x: 678, y: 167, elevation: 18.2, R: 120, A1: 60, A2: 60, kp: 520 }, // R=120 violates R_min 150m for 60km/h
-  { id: 'ip-4', name: 'IP-3 (新橋駅前広場)', x: 1203, y: 245, elevation: 22.0, R: 250, A1: 90, A2: 90, kp: 840 },
+  { id: 'ip-1', name: 'BP (起点 虎ノ門西)', x: 0, y: 0, elevation: 12.5, R: 0, A1: 0, A2: 0, kp: 0 },
+  { id: 'ip-2', name: 'IP-1 (虎ノ門ヒルズ交差点)', x: 434, y: 78, elevation: 14.8, R: 180, A1: 75, A2: 75, kp: 250 },
+  { id: 'ip-3', name: 'IP-2 (新橋合同庁舎西)', x: 742, y: 123, elevation: 18.2, R: 120, A1: 60, A2: 60, kp: 520 }, // R=120 violates R_min 150m for 60km/h
+  { id: 'ip-4', name: 'IP-3 (新橋駅前広場)', x: 1248, y: 245, elevation: 22.0, R: 250, A1: 90, A2: 90, kp: 840 },
   { id: 'ip-5', name: 'EP (終点 汐留メディアタワー)', x: 1357, y: 601, elevation: 25.4, R: 0, A1: 0, A2: 0, kp: 1100 },
 ];
 
