@@ -63,7 +63,7 @@ export function lonLatToGlobalPixel(lon: number, lat: number, zoom: number = ZOO
   return { gx, gy };
 }
 
-// Convert WGS84 Lat/Lon to SVG Canvas / EPSG:6677 Meters (0,0 = ORIGIN_LON, ORIGIN_LAT)
+// Convert WGS84 Lat/Lon to SVG Canvas meters (0,0 = ORIGIN_LON, ORIGIN_LAT)
 export function lonLatToSvg(lon: number, lat: number): { x: number; y: number } {
   const originGP = lonLatToGlobalPixel(ORIGIN_LON, ORIGIN_LAT);
   const gp = lonLatToGlobalPixel(lon, lat);
@@ -72,7 +72,7 @@ export function lonLatToSvg(lon: number, lat: number): { x: number; y: number } 
   return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
 }
 
-// Convert SVG Canvas / EPSG:6677 Meters back to WGS84 Lat/Lon
+// Convert SVG Canvas meters back to WGS84 Lat/Lon
 export function svgToLonLat(x: number, y: number): { lon: number; lat: number } {
   const originGP = lonLatToGlobalPixel(ORIGIN_LON, ORIGIN_LAT);
   const targetGx = originGP.gx + x / METERS_PER_PIXEL;
@@ -153,4 +153,37 @@ export function getOptimalMapCalibration() {
     mapOffsetY: 0,
     mapTileScale: 1.0,
   };
+}
+
+// Convert a geographic BBox to SVG canvas bounds (minX,minY,maxX,maxY)
+export function lonLatBBoxToSvgBounds(minLon: number, minLat: number, maxLon: number, maxLat: number) {
+  const p1 = lonLatToSvg(minLon, minLat);
+  const p2 = lonLatToSvg(maxLon, maxLat);
+  return {
+    minX: Math.min(p1.x, p2.x),
+    maxX: Math.max(p1.x, p2.x),
+    minY: Math.min(p1.y, p2.y),
+    maxY: Math.max(p1.y, p2.y),
+  };
+}
+
+// Suggest pan/zoom so that an SVG bbox fits inside the canvas
+export function fitSvgBoundsToView(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  svgWidth = 1000,
+  svgHeight = 600,
+  padding = 40
+): { zoomScale: number; panOffset: { x: number; y: number } } {
+  const w = Math.max(bounds.maxX - bounds.minX, 1);
+  const h = Math.max(bounds.maxY - bounds.minY, 1);
+  const scaleX = (svgWidth - padding * 2) / w;
+  const scaleY = (svgHeight - padding * 2) / h;
+  const zoomScale = Number(Math.max(0.2, Math.min(5.0, Math.min(scaleX, scaleY))).toFixed(2));
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  const panOffset = {
+    x: Number((svgWidth / 2 - centerX * zoomScale).toFixed(1)),
+    y: Number((svgHeight / 2 - centerY * zoomScale).toFixed(1)),
+  };
+  return { zoomScale, panOffset };
 }

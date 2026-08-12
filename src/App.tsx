@@ -23,16 +23,14 @@ import { AutoTestReportModal } from './components/AutoTestReportModal';
 import { SkillResultModal } from './components/SkillResultModal';
 
 export default function App() {
-  // Main Project State
   const [project, setProject] = useState<AlignmentProject>(DEFAULT_PROJECT);
   const [activeTab, setActiveTab] = useState<string>('3d_view');
-  const [selectedIpId, setSelectedIpId] = useState<string | null>('ip-3'); // IP-2 violating curve
+  const [selectedIpId, setSelectedIpId] = useState<string | null>('ip-3');
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [selectedKp, setSelectedKp] = useState<number>(500);
   const [isRagModalOpen, setIsRagModalOpen] = useState<boolean>(false);
   const [isQaReportModalOpen, setIsQaReportModalOpen] = useState<boolean>(false);
 
-  // Command Execution Logs
   const [logs, setLogs] = useState<string[]>([
     'Initializing Civil 3D AI Studio Workspace v2.5...',
     'Loaded PLATEAU 3D Urban Model Dataset (Buildings, DEM Mesh, Road Infrastructure).',
@@ -44,19 +42,15 @@ export default function App() {
     setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
   };
 
-  // 1. Run Auto-Testing Custom Hook (Real-time Invariant Evaluation)
   const invariants = useAutoTestEngine(project);
   const passedInvariantsCount = invariants.filter((i) => i.passed).length;
 
-  // 2. Run 11 源内AI Agents calculation
   const { proposals, clashes } = useMemo(() => {
     return AgentEngine.runAllAgents(project);
   }, [project]);
 
-  // 3. Custom Hook for Civil Skills Engine
   const { modalData, setModalData, executeSkill } = useCivilSkills(project, setProject, handleAddLog);
 
-  // 4. Custom Hook for Autonomous Multi-Agent System
   const {
     agents,
     agentLogs,
@@ -67,22 +61,17 @@ export default function App() {
     clearLogs,
   } = useAutonomousAgentEngine(project, setProject, handleAddLog);
 
-  // Auto-Fix All Handler
   const handleAutoFixAll = () => {
     executeSkill('skill:auto_fix_all');
   };
 
-  // Update Vertical Profile Elevation Handler
   const handleUpdateElevation = (ipOrVipId: string, newElevation: number) => {
     setProject((prev) => {
       const roundEl = Number(newElevation.toFixed(2));
-
-      // Find target KP if possible
       const targetPlanIp = prev.ipPoints.find((ip) => ip.id === ipOrVipId);
       const targetVip = prev.verticalIPs.find((v) => v.id === ipOrVipId);
       const targetKp = targetPlanIp ? targetPlanIp.kp : targetVip ? targetVip.kp : null;
 
-      // Update plan IP points
       const newIpPoints = prev.ipPoints.map((ip) => {
         if (ip.id === ipOrVipId || (targetKp !== null && Math.abs(ip.kp - targetKp) < 30)) {
           return { ...ip, elevation: roundEl };
@@ -90,7 +79,6 @@ export default function App() {
         return ip;
       });
 
-      // Update vertical IPs
       const newVerticalIPs = prev.verticalIPs.map((vip) => {
         if (vip.id === ipOrVipId || (targetKp !== null && Math.abs(vip.kp - targetKp) < 30)) {
           return { ...vip, elevation: roundEl };
@@ -98,7 +86,6 @@ export default function App() {
         return vip;
       });
 
-      // Recalculate gradients for vertical IPs
       for (let i = 0; i < newVerticalIPs.length; i++) {
         if (i < newVerticalIPs.length - 1) {
           const dist = newVerticalIPs[i + 1].kp - newVerticalIPs[i].kp;
@@ -108,7 +95,6 @@ export default function App() {
         }
       }
 
-      // Update crossSections design elevation & cut/fill areas
       const newCrossSections = prev.crossSections.map((cs) => {
         let designEl = cs.designElevation;
         for (let i = 0; i < newVerticalIPs.length - 1; i++) {
@@ -143,7 +129,6 @@ export default function App() {
     });
   };
 
-  // Update Curve Radius Handler
   const handleUpdateRadius = (ipId: string, newR: number) => {
     setProject((prev) => {
       const updated = prev.ipPoints.map((ip) => {
@@ -158,7 +143,6 @@ export default function App() {
     });
   };
 
-  // Command prompt handler
   const handleExecuteCommand = (cmd: string) => {
     handleAddLog(`Entered Command: ${cmd}`);
     if (cmd.startsWith('skill:')) {
@@ -172,7 +156,6 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#1a1c1e] text-[#d4d4d4] font-sans overflow-hidden select-none">
-      {/* 1. Header Navigation */}
       <Header
         project={project}
         activeTab={activeTab}
@@ -183,7 +166,6 @@ export default function App() {
         onOpenQaReportModal={() => setIsQaReportModalOpen(true)}
       />
 
-      {/* 2. Ribbon Commands Bar */}
       <RibbonBar
         project={project}
         onExecuteSkill={executeSkill}
@@ -194,9 +176,7 @@ export default function App() {
         }}
       />
 
-      {/* 3. Main Workspace Area (Prospector | Main Canvas | Properties) */}
       <main className="flex-1 flex overflow-hidden relative">
-        {/* Left: Toolspace Prospector */}
         <ToolspaceProspector
           project={project}
           invariants={invariants}
@@ -211,7 +191,6 @@ export default function App() {
           }}
         />
 
-        {/* Center Viewport */}
         <section className="flex-1 relative bg-[#0a0a0d] overflow-hidden flex flex-col">
           {activeTab === '3d_view' && (
             <Viewport3D
@@ -250,10 +229,15 @@ export default function App() {
                   if (data.success) {
                     setProject((prev) => ({
                       ...prev,
-                      plateauBuildings: data.buildings,
-                      plateauFeatures: data.features,
+                      plateauBuildings: data.buildings ?? [],
+                      plateauFeatures: data.features ?? [],
                     }));
-                    handleAddLog(`[PLATEAU BBox Query Success] Loaded ${data.totalCount} PLATEAU features (${data.featureCounts.bldg} bldg, ${data.featureCounts.tran} tran, ${data.featureCounts.rwy} rwy, ${data.featureCounts.wtr} wtr) inside selected region.`);
+                    const n = data.totalCount ?? 0;
+                    if (n === 0) {
+                      handleAddLog(`[PLATEAU BBox Query] 選択範囲内の地物は 0 件です。範囲を広げて再選択してください。`);
+                    } else {
+                      handleAddLog(`[PLATEAU BBox Query Success] Loaded ${n} PLATEAU features (${data.featureCounts.bldg} bldg, ${data.featureCounts.tran} tran, ${data.featureCounts.rwy} rwy, ${data.featureCounts.wtr} wtr) inside selected region.`);
+                    }
                   }
                 } catch (_) {
                   const result = queryPlateauFeaturesByBBox(bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat);
@@ -262,25 +246,22 @@ export default function App() {
                     plateauBuildings: result.buildings,
                     plateauFeatures: result.features,
                   }));
-                  handleAddLog(`[PLATEAU BBox Query Loaded] ${result.features.length} features loaded for selected area.`);
+                  if (result.features.length === 0) {
+                    handleAddLog(`[PLATEAU BBox Query] 選択範囲内の地物は 0 件です。範囲を広げて再選択してください。`);
+                  } else {
+                    handleAddLog(`[PLATEAU BBox Query Loaded] ${result.features.length} features (bldg:${result.counts.bldg} tran:${result.counts.tran} wtr:${result.counts.wtr} rwy:${result.counts.rwy}) loaded for selected area.`);
+                  }
                 }
               }}
             />
           )}
 
           {activeTab === 'profile' && (
-            <ProfileView
-              project={project}
-              onUpdateElevation={handleUpdateElevation}
-            />
+            <ProfileView project={project} onUpdateElevation={handleUpdateElevation} />
           )}
 
           {activeTab === 'cross_section' && (
-            <CrossSectionView
-              project={project}
-              selectedKp={selectedKp}
-              onSelectKp={(kp) => setSelectedKp(kp)}
-            />
+            <CrossSectionView project={project} selectedKp={selectedKp} onSelectKp={(kp) => setSelectedKp(kp)} />
           )}
 
           {activeTab === 'agent_panel' && (
@@ -304,7 +285,6 @@ export default function App() {
           )}
         </section>
 
-        {/* Right: Properties Inspector Panel */}
         <PropertiesPanel
           project={project}
           selectedIpId={selectedIpId}
@@ -320,21 +300,10 @@ export default function App() {
         />
       </main>
 
-      {/* 4. AutoCAD Command Line Footer & Status Bar */}
-      <CommandLineFooter
-        project={project}
-        logs={logs}
-        onExecuteCommand={handleExecuteCommand}
-      />
+      <CommandLineFooter project={project} logs={logs} onExecuteCommand={handleExecuteCommand} />
 
-      {/* 5. Gemini RAG Modal */}
-      <GeminiRagModal
-        project={project}
-        isOpen={isRagModalOpen}
-        onClose={() => setIsRagModalOpen(false)}
-      />
+      <GeminiRagModal project={project} isOpen={isRagModalOpen} onClose={() => setIsRagModalOpen(false)} />
 
-      {/* 6. QA Verification Agent Report Modal */}
       <AutoTestReportModal
         isOpen={isQaReportModalOpen}
         onClose={() => setIsQaReportModalOpen(false)}
@@ -346,12 +315,7 @@ export default function App() {
         onAutoFixAll={handleAutoFixAll}
       />
 
-      {/* 7. Skill Execution Result Modal */}
-      <SkillResultModal
-        data={modalData}
-        onClose={() => setModalData(null)}
-        onApplyFix={handleAutoFixAll}
-      />
+      <SkillResultModal data={modalData} onClose={() => setModalData(null)} onApplyFix={handleAutoFixAll} />
     </div>
   );
 }
