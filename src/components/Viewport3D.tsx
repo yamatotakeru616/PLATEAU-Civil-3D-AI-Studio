@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { AlignmentProject, AgentProposal, PlateauFeature } from '../types/civil';
-import { Eye, Box, Compass, Layers, AlertCircle } from 'lucide-react';
+import { Eye, Box, Compass, Layers, AlertCircle, BoxSelect } from 'lucide-react';
 
 interface Viewport3DProps {
   project: AlignmentProject;
   proposals: AgentProposal[];
   selectedIpId: string | null;
   onSelectIp: (id: string) => void;
+  onSwitchTo2DPlan?: () => void;
 }
 
 export const Viewport3D: React.FC<Viewport3DProps> = ({
@@ -15,6 +16,7 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
   proposals,
   selectedIpId,
   onSelectIp,
+  onSwitchTo2DPlan,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [wireframeMode, setWireframeMode] = useState(false);
@@ -359,6 +361,17 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({
           <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
           <span>赤入れ Vermillion</span>
         </button>
+
+        {onSwitchTo2DPlan && (
+          <button
+            onClick={onSwitchTo2DPlan}
+            className="px-2.5 py-1.5 rounded border text-[11px] flex items-center gap-1.5 backdrop-blur transition-all bg-sky-950/80 border-sky-500 text-sky-200 font-bold hover:bg-sky-900 shadow-lg"
+            title="2D平面地図へ移動して範囲選択(BBox)でPLATEAUデータを取得"
+          >
+            <BoxSelect className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+            <span>2D 範囲選択でデータ取得</span>
+          </button>
+        )}
       </div>
 
       {/* Coordinates overlay at bottom left */}

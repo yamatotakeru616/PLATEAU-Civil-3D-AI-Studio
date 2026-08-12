@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Compass,
   FileCheck2,
+  BoxSelect,
 } from 'lucide-react';
 import { AlignmentProject } from '../types/civil';
 
@@ -17,12 +18,14 @@ interface RibbonBarProps {
   project: AlignmentProject;
   onExecuteSkill: (command: string) => void;
   onAutoFixAll: () => void;
+  onTriggerBBoxSelect?: () => void;
 }
 
 export const RibbonBar: React.FC<RibbonBarProps> = ({
   project,
   onExecuteSkill,
   onAutoFixAll,
+  onTriggerBBoxSelect,
 }) => {
   return (
     <div className="h-20 bg-[#252526] border-b border-[#3e3e42] flex items-center px-3 gap-4 text-xs overflow-x-auto select-none">
@@ -75,6 +78,14 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
       {/* 3. PLATEAU & 法令 RAG Group */}
       <div className="flex flex-col items-center gap-1 pr-3 border-r border-[#3e3e42]">
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={onTriggerBBoxSelect}
+            className="flex flex-col items-center p-1.5 bg-[#00a2ed]/20 hover:bg-[#00a2ed]/40 border border-[#00a2ed]/60 rounded text-[#00a2ed] hover:text-white transition-all shadow font-bold"
+            title="2D地図上でドラッグして動的にPLATEAUデータ(建物/道路/鉄道/水路)を取得"
+          >
+            <BoxSelect className="w-5 h-5 text-sky-400 animate-pulse" />
+            <span className="text-[10px] mt-0.5">2D 範囲選択 (BBox)</span>
+          </button>
           <button
             onClick={() => onExecuteSkill('skill:detect_plateau_clash')}
             className="flex flex-col items-center p-1.5 bg-[#333] hover:bg-[#007acc]/30 border border-[#444] rounded text-gray-200 hover:text-white hover:border-[#007acc] transition-all"

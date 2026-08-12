@@ -188,6 +188,10 @@ export default function App() {
         project={project}
         onExecuteSkill={executeSkill}
         onAutoFixAll={handleAutoFixAll}
+        onTriggerBBoxSelect={() => {
+          setActiveTab('2d_plan');
+          handleAddLog('[2D 範囲選択モード起動] 平面線形2D画面でマウスドラッグして取得するPLATEAUエリアを選択してください。');
+        }}
       />
 
       {/* 3. Main Workspace Area (Prospector | Main Canvas | Properties) */}
@@ -215,6 +219,10 @@ export default function App() {
               proposals={proposals}
               selectedIpId={selectedIpId}
               onSelectIp={(id) => setSelectedIpId(id)}
+              onSwitchTo2DPlan={() => {
+                setActiveTab('2d_plan');
+                handleAddLog('[2D 範囲選択モード起動] 平面線形2D画面でマウスドラッグして取得するPLATEAUエリアを選択してください。');
+              }}
             />
           )}
 
