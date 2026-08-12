@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { AlignmentProject, AgentProposal, PlateauFeature } from '../types/civil';
-import { ZoomIn, ZoomOut, RotateCcw, Move, MousePointer, Map, Layers, Eye, Sliders, Compass, ShieldCheck } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Move, MousePointer, Map, Layers, Eye, Sliders, Compass, ShieldCheck, BoxSelect } from 'lucide-react';
 import { calculateCalibratedTileGrid, calculateAlignmentGisError, svgToLonLat, getOptimalMapCalibration } from '../utils/gisProjection';
 
 interface Alignment2DViewProps {
@@ -9,6 +9,7 @@ interface Alignment2DViewProps {
   selectedIpId: string | null;
   onSelectIp: (id: string) => void;
   onUpdateIpPosition: (id: string, newX: number, newY: number) => void;
+  onSelectRegion?: (bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number }) => void;
 }
 
 export type MapStyle = 'grid' | 'gsi_std' | 'gsi_pale' | 'gsi_ortho' | 'osm' | 'dark_gis';
@@ -19,6 +20,7 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
   selectedIpId,
   onSelectIp,
   onUpdateIpPosition,
+  onSelectRegion,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [draggingIpId, setDraggingIpId] = useState<string | null>(null);
@@ -28,6 +30,11 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Region Selection BBox State
+  const [isBoxSelectMode, setIsBoxSelectMode] = useState<boolean>(false);
+  const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const [selectedBBoxInfo, setSelectedBBoxInfo] = useState<{ minLon: number; minLat: number; maxLon: number; maxLat: number } | null>(null);
 
   // 2D Map Layer State
   const [mapStyle, setMapStyle] = useState<MapStyle>('gsi_std');
@@ -116,8 +123,20 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
     });
   };
 
-  // Drag start for IP or Pan
+  // Drag start for IP, Pan, or Box Selection
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (isBoxSelectMode && e.button === 0) {
+      e.preventDefault();
+      const coords = getSvgCoords(e);
+      setSelectionBox({ startX: coords.x, startY: coords.y, currentX: coords.x, currentY: coords.y });
+      if (svgRef.current?.setPointerCapture) {
+        try {
+          svgRef.current.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+      return;
+    }
+
     // Middle click (button === 1 or buttons === 4) OR Right click (button === 2) OR Canvas Pan drag
     if (e.button === 1 || e.button === 2 || (e.button === 0 && e.target === svgRef.current)) {
       e.preventDefault();
@@ -133,7 +152,7 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
 
   // Drag start for IP Point
   const handlePointerDownIp = (e: React.PointerEvent, ipId: string) => {
-    if (e.button !== 0) return; // Left click only for IP drag
+    if (e.button !== 0 || isBoxSelectMode) return; // Left click only for IP drag
     e.stopPropagation();
     onSelectIp(ipId);
     setDraggingIpId(ipId);
@@ -144,8 +163,14 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
     }
   };
 
-  // Dragging movement (IP point or Pan)
+  // Dragging movement (IP point, Pan, or Box Selection)
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (selectionBox) {
+      const coords = getSvgCoords(e);
+      setSelectionBox((prev) => (prev ? { ...prev, currentX: coords.x, currentY: coords.y } : null));
+      return;
+    }
+
     if (isPanning) {
       const newPanX = e.clientX - panStart.x;
       const newPanY = e.clientY - panStart.y;
@@ -160,6 +185,35 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
 
   // Drag end
   const handlePointerUp = (e: React.PointerEvent) => {
+    if (selectionBox) {
+      const minX = Math.min(selectionBox.startX, selectionBox.currentX);
+      const maxX = Math.max(selectionBox.startX, selectionBox.currentX);
+      const minY = Math.min(selectionBox.startY, selectionBox.currentY);
+      const maxY = Math.max(selectionBox.startY, selectionBox.currentY);
+
+      if (Math.abs(maxX - minX) > 15 && Math.abs(maxY - minY) > 15) {
+        const p1 = svgToLonLat(minX, minY);
+        const p2 = svgToLonLat(maxX, maxY);
+        const bbox = {
+          minLon: Math.min(p1.lon, p2.lon),
+          maxLon: Math.max(p1.lon, p2.lon),
+          minLat: Math.min(p1.lat, p2.lat),
+          maxLat: Math.max(p1.lat, p2.lat),
+        };
+        setSelectedBBoxInfo(bbox);
+        if (onSelectRegion) {
+          onSelectRegion(bbox);
+        }
+      }
+      setSelectionBox(null);
+      if (svgRef.current?.releasePointerCapture) {
+        try {
+          svgRef.current.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+      return;
+    }
+
     if (isPanning) {
       setIsPanning(false);
       if (svgRef.current?.releasePointerCapture) {
@@ -277,6 +331,19 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
               <span className="text-[10px] font-bold">1:1 Fit</span>
             </button>
           </div>
+
+          <button
+            onClick={() => setIsBoxSelectMode((prev) => !prev)}
+            title="2D 範囲選択モード (Bounding Box Region Selector)"
+            className={`p-1.5 rounded border transition-colors flex items-center gap-1 font-mono text-[11px] ${
+              isBoxSelectMode
+                ? 'bg-sky-600 text-white border-sky-400 shadow-lg animate-pulse'
+                : 'bg-[#1a1c1e] text-sky-400 border-sky-700/50 hover:bg-sky-950/40'
+            }`}
+          >
+            <BoxSelect className="w-3.5 h-3.5" />
+            <span>{isBoxSelectMode ? '範囲選択中' : '範囲選択 (BBox)'}</span>
+          </button>
 
           <button
             onClick={() => setShowMapControls((prev) => !prev)}
@@ -663,6 +730,33 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
                 </g>
               );
             })}
+
+            {/* Dynamic Bounding Box Region Selector Overlay */}
+            {selectionBox && (
+              <g className="pointer-events-none">
+                <rect
+                  x={Math.min(selectionBox.startX, selectionBox.currentX)}
+                  y={Math.min(selectionBox.startY, selectionBox.currentY)}
+                  width={Math.abs(selectionBox.currentX - selectionBox.startX)}
+                  height={Math.abs(selectionBox.currentY - selectionBox.startY)}
+                  fill="rgba(0, 162, 237, 0.18)"
+                  stroke="#00a2ed"
+                  strokeWidth="2"
+                  strokeDasharray="6,3"
+                  className="animate-pulse"
+                />
+                <text
+                  x={Math.min(selectionBox.startX, selectionBox.currentX) + 8}
+                  y={Math.min(selectionBox.startY, selectionBox.currentY) + 18}
+                  fill="#00a2ed"
+                  fontSize="11"
+                  fontWeight="bold"
+                  fontFamily="monospace"
+                >
+                  【2D PLATEAU 範囲選択中】
+                </text>
+              </g>
+            )}
 
             {/* Tangent Lines & Interactive IP Points */}
             {project.ipPoints.map((ip) => {

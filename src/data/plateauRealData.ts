@@ -411,3 +411,53 @@ export function getRealPlateauData() {
     features: REAL_PLATEAU_FEATURES,
   };
 }
+
+export function queryPlateauFeaturesByBBox(
+  minLon: number,
+  minLat: number,
+  maxLon: number,
+  maxLat: number
+): {
+  buildings: PlateauBuilding[];
+  features: PlateauFeature[];
+  counts: { bldg: number; tran: number; wtr: number; rwy: number };
+  bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number };
+} {
+  const l0 = Math.min(minLon, maxLon);
+  const l1 = Math.max(minLon, maxLon);
+  const a0 = Math.min(minLat, maxLat);
+  const a1 = Math.max(minLat, maxLat);
+
+  const matchedFeatures = REAL_PLATEAU_FEATURES.filter((ft) => {
+    if (ft.lon !== undefined && ft.lat !== undefined) {
+      return ft.lon >= l0 && ft.lon <= l1 && ft.lat >= a0 && ft.lat <= a1;
+    }
+    return true;
+  });
+
+  const matchedBuildings = REAL_PLATEAU_BUILDINGS.filter((b) => {
+    if (b.lon !== undefined && b.lat !== undefined) {
+      return b.lon >= l0 && b.lon <= l1 && b.lat >= a0 && b.lat <= a1;
+    }
+    return true;
+  });
+
+  // If match count is zero (e.g. initial zoom out), fallback to full dataset to maintain rendering
+  const finalFeatures = matchedFeatures.length > 0 ? matchedFeatures : REAL_PLATEAU_FEATURES;
+  const finalBuildings = matchedBuildings.length > 0 ? matchedBuildings : REAL_PLATEAU_BUILDINGS;
+
+  const counts = {
+    bldg: finalFeatures.filter((f) => f.category === 'bldg').length,
+    tran: finalFeatures.filter((f) => f.category === 'tran').length,
+    wtr: finalFeatures.filter((f) => f.category === 'wtr').length,
+    rwy: finalFeatures.filter((f) => f.category === 'rwy').length,
+  };
+
+  return {
+    buildings: finalBuildings,
+    features: finalFeatures,
+    counts,
+    bbox: { minLon: l0, minLat: a0, maxLon: l1, maxLat: a1 },
+  };
+}
+

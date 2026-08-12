@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { AlignmentProject, AgentProposal, ClashItem } from './types/civil';
 import { DEFAULT_PROJECT } from './data/mockCivilData';
+import { queryPlateauFeaturesByBBox } from './data/plateauRealData';
 import { AgentEngine } from './services/agentEngine';
 import { useAutoTestEngine } from './hooks/useAutoTestEngine';
 import { useCivilSkills } from './hooks/useCivilSkills';
@@ -228,6 +229,33 @@ export default function App() {
                   ...prev,
                   ipPoints: prev.ipPoints.map((p) => (p.id === id ? { ...p, x: newX, y: newY } : p)),
                 }));
+              }}
+              onSelectRegion={async (bbox) => {
+                handleAddLog(`[PLATEAU 2D BBox Query] Selected area: Lon [${bbox.minLon.toFixed(4)} ~ ${bbox.maxLon.toFixed(4)}], Lat [${bbox.minLat.toFixed(4)} ~ ${bbox.maxLat.toFixed(4)}]`);
+                try {
+                  const res = await fetch('/api/plateau/query-bbox', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bbox),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setProject((prev) => ({
+                      ...prev,
+                      plateauBuildings: data.buildings,
+                      plateauFeatures: data.features,
+                    }));
+                    handleAddLog(`[PLATEAU BBox Query Success] Loaded ${data.totalCount} PLATEAU features (${data.featureCounts.bldg} bldg, ${data.featureCounts.tran} tran, ${data.featureCounts.rwy} rwy, ${data.featureCounts.wtr} wtr) inside selected region.`);
+                  }
+                } catch (_) {
+                  const result = queryPlateauFeaturesByBBox(bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat);
+                  setProject((prev) => ({
+                    ...prev,
+                    plateauBuildings: result.buildings,
+                    plateauFeatures: result.features,
+                  }));
+                  handleAddLog(`[PLATEAU BBox Query Loaded] ${result.features.length} features loaded for selected area.`);
+                }
               }}
             />
           )}

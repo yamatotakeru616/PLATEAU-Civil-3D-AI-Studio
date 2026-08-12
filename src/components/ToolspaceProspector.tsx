@@ -142,18 +142,18 @@ export const ToolspaceProspector: React.FC<ToolspaceProspectorProps> = ({
             >
               {openSections.plateau ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               <Building className="w-3.5 h-3.5 text-indigo-400" />
-              <span>PLATEAU 3D DB (CityGML 4層)</span>
+              <span>PLATEAU 3D DB [{project.plateauFeatures?.length || project.plateauBuildings.length}件]</span>
             </div>
 
             {openSections.plateau && (
               <div className="pl-2 space-y-1 text-gray-400 font-sans text-[10px]">
                 <div className="bg-indigo-950/60 border border-indigo-500/30 p-1.5 rounded text-[9px] text-indigo-200 space-y-1">
                   <div className="flex justify-between font-bold text-indigo-300">
-                    <span>PLATEAU DB: アクティブ</span>
-                    <span className="bg-indigo-700 text-white px-1 rounded">13103 港区</span>
+                    <span>PLATEAU 空間クエリ</span>
+                    <span className="bg-indigo-700 text-white px-1 rounded">2D BBox 選択同期</span>
                   </div>
                   <div className="text-[8px] text-gray-300">
-                    4層(建物/道路/水路/鉄道) 空間インデックス構築済
+                    4層 (建物/道路/水路/鉄道) 動的検索・描画連動
                   </div>
                 </div>
                 {project.plateauBuildings.map((bld) => (

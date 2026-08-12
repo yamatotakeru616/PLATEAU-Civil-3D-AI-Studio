@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { queryPlateauFeaturesByBBox } from './src/data/plateauRealData';
 
 dotenv.config();
 
@@ -151,6 +152,35 @@ ${JSON.stringify(contextData, null, 2)}
       success: false,
       error: error?.message || 'Agent consulting failed',
     });
+  }
+});
+
+// 3. API: Dynamic PLATEAU Spatial BBox Query Endpoint
+app.post('/api/plateau/query-bbox', (req, res) => {
+  try {
+    const { minLon, minLat, maxLon, maxLat } = req.body;
+    if (minLon === undefined || minLat === undefined || maxLon === undefined || maxLat === undefined) {
+      return res.status(400).json({ success: false, error: 'Missing bounding box parameters' });
+    }
+
+    const result = queryPlateauFeaturesByBBox(
+      Number(minLon),
+      Number(minLat),
+      Number(maxLon),
+      Number(maxLat)
+    );
+
+    res.json({
+      success: true,
+      queryBBox: result.bbox,
+      featureCounts: result.counts,
+      totalCount: result.features.length,
+      buildings: result.buildings,
+      features: result.features,
+    });
+  } catch (error: any) {
+    console.error('PLATEAU BBox Query Error:', error);
+    res.status(500).json({ success: false, error: error?.message || 'Spatial query failed' });
   }
 });
 
