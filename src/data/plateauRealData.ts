@@ -442,22 +442,20 @@ export function queryPlateauFeaturesByBBox(
     return true;
   });
 
-  // If match count is zero (e.g. initial zoom out), fallback to full dataset to maintain rendering
-  const finalFeatures = matchedFeatures.length > 0 ? matchedFeatures : REAL_PLATEAU_FEATURES;
-  const finalBuildings = matchedBuildings.length > 0 ? matchedBuildings : REAL_PLATEAU_BUILDINGS;
-
+  // Do NOT fallback to full dataset when empty — empty result means "no features in bbox"
+  // (Previously matched 0 returned all data, which made BBox selection appear broken.)
+  // See GitHub Issue #2
   const counts = {
-    bldg: finalFeatures.filter((f) => f.category === 'bldg').length,
-    tran: finalFeatures.filter((f) => f.category === 'tran').length,
-    wtr: finalFeatures.filter((f) => f.category === 'wtr').length,
-    rwy: finalFeatures.filter((f) => f.category === 'rwy').length,
+    bldg: matchedFeatures.filter((f) => f.category === 'bldg').length,
+    tran: matchedFeatures.filter((f) => f.category === 'tran').length,
+    wtr: matchedFeatures.filter((f) => f.category === 'wtr').length,
+    rwy: matchedFeatures.filter((f) => f.category === 'rwy').length,
   };
 
   return {
-    buildings: finalBuildings,
-    features: finalFeatures,
+    buildings: matchedBuildings,
+    features: matchedFeatures,
     counts,
     bbox: { minLon: l0, minLat: a0, maxLon: l1, maxLat: a1 },
   };
 }
-
