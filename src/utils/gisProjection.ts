@@ -5,7 +5,7 @@
 // deltas around a fixed origin. Map tiles and PLATEAU footprints can diverge
 // by several meters. See GitHub Issue #1 for the proper EPSG:6677 / MapLibre plan.
 // ---------------------------------------------------------------------------
-// Calibrated for 国土交通省 MLIT Project PLATEAU 3D City Models & GSI Maps (demo)
+// Calibrated for 国土交通省 MLIT Project PLATEAU 3D City Models & GSI Maps
 
 export const ORIGIN_LON = 139.7450; // Reference origin West (Toranomon Nishi)
 export const ORIGIN_LAT = 35.6685;  // Reference origin North (Toranomon Kita)
@@ -13,6 +13,46 @@ export const ORIGIN_LAT = 35.6685;  // Reference origin North (Toranomon Kita)
 const ZOOM_LEVEL = 16;
 const N_TILES = Math.pow(2, ZOOM_LEVEL); // 65536
 export const METERS_PER_PIXEL = (40075016.68 * Math.cos(ORIGIN_LAT * Math.PI / 180)) / (N_TILES * 256); // ~1.9406085 m/px
+
+// Rigorous Gauss-Krüger Projection Engine for EPSG:6677 (Japan Plane Rectangular IX - Tokyo Region)
+// Origin IX: 36.0000° N, 139.8333° E (GRS80 Ellipsoid, m0 = 0.9999)
+const ZONE9_LON0 = 139.83333333333334;
+const ZONE9_LAT0 = 36.0;
+const M0 = 0.9999;
+const ELLIPSOID_A = 6378137.0;
+const ELLIPSOID_F = 1 / 298.257222101;
+const ELLIPSOID_B = ELLIPSOID_A * (1 - ELLIPSOID_F);
+const E2 = (ELLIPSOID_A ** 2 - ELLIPSOID_B ** 2) / (ELLIPSOID_A ** 2);
+const E_PRIME2 = (ELLIPSOID_A ** 2 - ELLIPSOID_B ** 2) / (ELLIPSOID_B ** 2);
+
+export function wgs84ToEpsg6677(lon: number, lat: number): { xNorth: number; yEast: number } {
+  const radLat = (lat * Math.PI) / 180;
+  const radLon = (lon * Math.PI) / 180;
+  const radLat0 = (ZONE9_LAT0 * Math.PI) / 180;
+  const radLon0 = (ZONE9_LON0 * Math.PI) / 180;
+  const dLon = radLon - radLon0;
+
+  const N = ELLIPSOID_A / Math.sqrt(1 - E2 * Math.sin(radLat) ** 2);
+  const t = Math.tan(radLat);
+  const eta2 = E_PRIME2 * Math.cos(radLat) ** 2;
+
+  const A0 = 1 - E2 / 4 - (3 * E2 ** 2) / 64 - (5 * E2 ** 3) / 256;
+  const A2 = (3 / 8) * (E2 + E2 ** 2 / 4 + (15 * E2 ** 3) / 128);
+  const A4 = (15 / 256) * (E2 ** 2 + (3 * E2 ** 3) / 4);
+  const A6 = (35 / 3072) * E2 ** 3;
+
+  const S = ELLIPSOID_A * (A0 * radLat - A2 * Math.sin(2 * radLat) + A4 * Math.sin(4 * radLat) - A6 * Math.sin(6 * radLat));
+  const S0 = ELLIPSOID_A * (A0 * radLat0 - A2 * Math.sin(2 * radLat0) + A4 * Math.sin(4 * radLat0) - A6 * Math.sin(6 * radLat0));
+
+  const xNorth = M0 * ((S - S0) + (N / 2) * Math.sin(radLat) * Math.cos(radLat) * dLon ** 2 +
+    (N / 24) * Math.sin(radLat) * Math.cos(radLat) ** 3 * (5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2) * dLon ** 4);
+
+  const yEast = M0 * (N * Math.cos(radLat) * dLon +
+    (N / 6) * Math.cos(radLat) ** 3 * (1 - t ** 2 + eta2) * dLon ** 3 +
+    (N / 120) * Math.cos(radLat) ** 5 * (5 - 18 * t ** 2 + t ** 4 + 14 * eta2 - 58 * t ** 2 * eta2) * dLon ** 5);
+
+  return { xNorth: Number(xNorth.toFixed(3)), yEast: Number(yEast.toFixed(3)) };
+}
 
 // Global Mercator pixel coordinate calculation
 export function lonLatToGlobalPixel(lon: number, lat: number, zoom: number = ZOOM_LEVEL) {

@@ -564,6 +564,44 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
         onWheel={handleWheel}
         onContextMenu={handleContextMenu}
       >
+        {/* 2D BBox Selection HUD Floating Card */}
+        {selectedBBoxInfo && (
+          <div className="absolute top-4 left-4 z-20 bg-[#16181d]/95 border border-sky-500/50 p-3 rounded-lg shadow-2xl text-xs font-mono text-gray-200 w-72 backdrop-blur space-y-2">
+            <div className="flex items-center justify-between border-b border-[#333] pb-1.5 font-bold text-sky-400">
+              <span className="flex items-center gap-1.5">
+                <BoxSelect className="w-4 h-4 text-sky-400 animate-pulse" />
+                2D PLATEAU 選択領域 HUD
+              </span>
+              <button
+                onClick={() => setSelectedBBoxInfo(null)}
+                className="text-gray-400 hover:text-white font-bold text-xs"
+                title="選択解除"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-1 text-[10px]">
+              <div className="flex justify-between text-gray-300">
+                <span>緯度範囲 (Lat):</span>
+                <span className="text-sky-300 font-mono font-bold">
+                  {selectedBBoxInfo.minLat.toFixed(4)}° ~ {selectedBBoxInfo.maxLat.toFixed(4)}°
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-300">
+                <span>経度範囲 (Lon):</span>
+                <span className="text-sky-300 font-mono font-bold">
+                  {selectedBBoxInfo.minLon.toFixed(4)}° ~ {selectedBBoxInfo.maxLon.toFixed(4)}°
+                </span>
+              </div>
+            </div>
+            <div className="bg-sky-950/60 border border-sky-500/30 p-1.5 rounded text-[9px] text-sky-200 flex justify-between">
+              <span>ロード結果:</span>
+              <span className="font-bold text-emerald-400">
+                {project.plateauFeatures?.length || project.plateauBuildings.length} 件オブジェクト
+              </span>
+            </div>
+          </div>
+        )}
         <svg
           ref={svgRef}
           width={svgWidth}
