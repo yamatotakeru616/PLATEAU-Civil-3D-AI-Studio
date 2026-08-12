@@ -66,34 +66,54 @@ export function PlateauFeaturesLayer({ features }: { features: PlateauFeature[] 
           strokeDash = '2,2';
         }
 
+        const ring = ft.shapePoints && ft.shapePoints.length >= 3 ? ft.shapePoints : null;
+        const pathD = ring
+          ? ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
+          : null;
+
         const w = Math.max(ft.width || 20, 12);
         const h = Math.max(ft.length || 20, 12);
+        const label = ft.category === 'bldg'
+          ? `${ft.height ? ft.height.toFixed(0) + 'm' : ''}`.trim()
+          : ft.name;
 
         return (
           <g key={ft.id} className="pointer-events-none">
-            <rect
-              x={cx - w / 2}
-              y={cy - h / 2}
-              width={w}
-              height={h}
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth={isCritical ? '2.5' : '1.8'}
-              strokeDasharray={strokeDash}
-              rx="2"
-            />
-            <text
-              x={cx}
-              y={cy + 3}
-              fill={isCritical ? '#ffffff' : '#e0f2fe'}
-              fontSize="9"
-              fontWeight="bold"
-              fontFamily="monospace"
-              textAnchor="middle"
-              className="drop-shadow"
-            >
-              {ft.name} {ft.category === 'bldg' ? `(${ft.height}m)` : ''}
-            </text>
+            {pathD ? (
+              <path
+                d={pathD}
+                fill={fillColor}
+                stroke={strokeColor}
+                strokeWidth={isCritical ? '2' : '1.2'}
+                strokeDasharray={strokeDash}
+              />
+            ) : (
+              <rect
+                x={cx - w / 2}
+                y={cy - h / 2}
+                width={w}
+                height={h}
+                fill={fillColor}
+                stroke={strokeColor}
+                strokeWidth={isCritical ? '2.5' : '1.8'}
+                strokeDasharray={strokeDash}
+                rx="2"
+              />
+            )}
+            {ft.category === 'bldg' && ft.height && ft.height >= 25 && (
+              <text
+                x={cx}
+                y={cy + 3}
+                fill={isCritical ? '#ffffff' : '#e0f2fe'}
+                fontSize="8"
+                fontWeight="bold"
+                fontFamily="monospace"
+                textAnchor="middle"
+                className="drop-shadow"
+              >
+                {label}
+              </text>
+            )}
           </g>
         );
       })}
