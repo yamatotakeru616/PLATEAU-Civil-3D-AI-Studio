@@ -6,7 +6,7 @@ export const ORIGIN_LAT = 35.6685;  // Reference origin North (Toranomon Kita)
 
 const ZOOM_LEVEL = 16;
 const N_TILES = Math.pow(2, ZOOM_LEVEL); // 65536
-export const METERS_PER_PIXEL = (40075016.68 * Math.cos(35.6665 * Math.PI / 180)) / (N_TILES * 256); // ~1.9406085 m/px
+export const METERS_PER_PIXEL = (40075016.68 * Math.cos(ORIGIN_LAT * Math.PI / 180)) / (N_TILES * 256); // ~1.9406085 m/px
 
 // Global Mercator pixel coordinate calculation
 export function lonLatToGlobalPixel(lon: number, lat: number, zoom: number = ZOOM_LEVEL) {
@@ -99,3 +99,13 @@ export function calculateAlignmentGisError(offsetX: number, offsetY: number, sca
   const scaleError = Math.abs(scale - 1.0) * 100; // meters
   return Number((positionError + scaleError).toFixed(2));
 }
+
+// Calculate optimal default GIS projection calibration parameters
+export function getOptimalMapCalibration() {
+  return {
+    mapOffsetX: 0,
+    mapOffsetY: 0,
+    mapTileScale: 1.0,
+  };
+}
+

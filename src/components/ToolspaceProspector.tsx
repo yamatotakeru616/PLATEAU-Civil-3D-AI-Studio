@@ -134,7 +134,7 @@ export const ToolspaceProspector: React.FC<ToolspaceProspectorProps> = ({
             )}
           </div>
 
-          {/* 3. PLATEAU 3D Models */}
+          {/* 3. PLATEAU 3D Models DB */}
           <div className="pl-3 space-y-1">
             <div
               onClick={() => toggleSection('plateau')}
@@ -142,19 +142,31 @@ export const ToolspaceProspector: React.FC<ToolspaceProspectorProps> = ({
             >
               {openSections.plateau ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               <Building className="w-3.5 h-3.5 text-indigo-400" />
-              <span>PLATEAU 3D層 (4Layers)</span>
+              <span>PLATEAU 3D DB (CityGML 4層)</span>
             </div>
 
             {openSections.plateau && (
-              <div className="pl-4 space-y-0.5 text-gray-400 font-sans">
+              <div className="pl-2 space-y-1 text-gray-400 font-sans text-[10px]">
+                <div className="bg-indigo-950/60 border border-indigo-500/30 p-1.5 rounded text-[9px] text-indigo-200 space-y-1">
+                  <div className="flex justify-between font-bold text-indigo-300">
+                    <span>PLATEAU DB: アクティブ</span>
+                    <span className="bg-indigo-700 text-white px-1 rounded">13103 港区</span>
+                  </div>
+                  <div className="text-[8px] text-gray-300">
+                    4層(建物/道路/水路/鉄道) 空間インデックス構築済
+                  </div>
+                </div>
                 {project.plateauBuildings.map((bld) => (
                   <div
                     key={bld.id}
                     onClick={() => onSelectBuilding(bld.id)}
-                    className="flex items-center justify-between px-1.5 py-0.5 hover:bg-[#333] rounded cursor-pointer truncate"
+                    className="flex items-center justify-between px-1.5 py-1 hover:bg-[#333] rounded cursor-pointer truncate border-b border-[#252528]"
                   >
-                    <span className="truncate">{bld.name}</span>
-                    <span className="text-[9px] text-indigo-300 font-mono">{bld.height}m</span>
+                    <div className="flex flex-col truncate">
+                      <span className="truncate text-gray-200 font-medium">{bld.name}</span>
+                      <span className="text-[8px] text-indigo-400 font-mono">{bld.gmlId || 'bldg_13103_001'}</span>
+                    </div>
+                    <span className="text-[9px] text-indigo-300 font-mono font-bold shrink-0">{bld.height}m</span>
                   </div>
                 ))}
               </div>

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { AlignmentProject, AgentProposal, PlateauFeature } from '../types/civil';
 import { ZoomIn, ZoomOut, RotateCcw, Move, MousePointer, Map, Layers, Eye, Sliders, Compass, ShieldCheck } from 'lucide-react';
-import { calculateCalibratedTileGrid, calculateAlignmentGisError, svgToLonLat } from '../utils/gisProjection';
+import { calculateCalibratedTileGrid, calculateAlignmentGisError, svgToLonLat, getOptimalMapCalibration } from '../utils/gisProjection';
 
 interface Alignment2DViewProps {
   project: AlignmentProject;
@@ -474,6 +474,18 @@ export const Alignment2DView: React.FC<Alignment2DViewProps> = ({
                   {gisAlignmentError}m {gisAlignmentError <= 0.5 ? "(高精度)" : "(微調整中)"}
                 </span>
               </div>
+              <button
+                onClick={() => {
+                  const opt = getOptimalMapCalibration();
+                  setMapOffsetX(opt.mapOffsetX);
+                  setMapOffsetY(opt.mapOffsetY);
+                  setMapTileScale(opt.mapTileScale);
+                }}
+                className="mt-1 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-1 px-2 rounded text-[10px] flex items-center justify-center gap-1 shadow transition-colors"
+              >
+                <Compass className="w-3 h-3" />
+                自動プロジェクション補正 (Auto Snap)
+              </button>
             </div>
           </div>
         </div>
