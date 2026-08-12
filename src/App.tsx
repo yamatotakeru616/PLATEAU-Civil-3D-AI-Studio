@@ -233,10 +233,11 @@ export default function App() {
                       plateauFeatures: data.features ?? [],
                     }));
                     const n = data.totalCount ?? 0;
+                    const src = data.source === 'plateau-mvt' ? '実データ(MVT)' : 'モック';
                     if (n === 0) {
-                      handleAddLog(`[PLATEAU BBox Query] 選択範囲内の地物は 0 件です。範囲を広げて再選択してください。`);
+                      handleAddLog(`[PLATEAU BBox Query] 選択範囲内の地物は 0 件です（${src}）。範囲を広げて再選択してください。`);
                     } else {
-                      handleAddLog(`[PLATEAU BBox Query Success] Loaded ${n} PLATEAU features (${data.featureCounts.bldg} bldg, ${data.featureCounts.tran} tran, ${data.featureCounts.rwy} rwy, ${data.featureCounts.wtr} wtr) inside selected region.`);
+                      handleAddLog(`[PLATEAU BBox Query Success/${src}] ${n} 件 (bldg:${data.featureCounts?.bldg ?? 0}) tiles:${data.tileCount ?? '-'} を選択範囲に配置しました。`);
                     }
                   }
                 } catch (_) {
