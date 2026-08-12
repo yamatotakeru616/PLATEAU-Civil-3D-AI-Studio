@@ -1,0 +1,6 @@
+{
+  "name": "PLATEAU Civil 3D AI Studio",
+  "description": "PLATEAU 3D都市モデルと11の専門AIエージェントが連携する、CIVIL 3Dライクな統合土木設計・3D線形・地形干渉チェックシステム",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
